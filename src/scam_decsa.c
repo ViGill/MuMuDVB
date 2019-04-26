@@ -177,7 +177,7 @@ static void *decsathread_func(void* arg)
     switch (scrambling_control_packet) {
           case 2:
             ++scrambled;
-            if (ca_idx && got_first_even_key) {
+            if (/*ca_idx && */got_first_even_key) {
               even_batch[even_batch_idx].data = channel->ring_buf->data+TS_PACKET_SIZE*channel->ring_buf->read_decsa_idx + offset;
               even_batch[even_batch_idx].len = len;
               even_scnt_field[even_batch_idx] = channel->ring_buf->data+TS_PACKET_SIZE*channel->ring_buf->read_decsa_idx+3;
@@ -186,7 +186,7 @@ static void *decsathread_func(void* arg)
             break;
           case 3:
             ++scrambled;
-            if (ca_idx && got_first_odd_key) {
+            if (/*ca_idx && */got_first_odd_key) {
               odd_batch[odd_batch_idx].data = channel->ring_buf->data+TS_PACKET_SIZE*channel->ring_buf->read_decsa_idx + offset;
               odd_batch[odd_batch_idx].len = len;
               odd_scnt_field[odd_batch_idx] = channel->ring_buf->data+TS_PACKET_SIZE*channel->ring_buf->read_decsa_idx+3;
