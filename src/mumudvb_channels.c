@@ -53,6 +53,8 @@ int mumu_init_chan(mumudvb_channel_t *chan)
 	chan->scrambled_channel = 0;
 	chan->generated_pat_version=-1;
 	chan->generated_sdt_version=-1;
+	chan->service_type = 25;
+
 	//We alloc the channel pmt_packet (useful for autoconf and cam)
 	if(chan->pmt_packet==NULL)
 	{

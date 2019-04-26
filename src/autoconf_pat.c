@@ -214,6 +214,7 @@ int autoconf_read_pat(auto_p_t *auto_p,mumu_chan_p_t *chan_p)
 
 	}
 
+	auto_p->need_filter_chan_update=1;
 
 	return 0;
 }
