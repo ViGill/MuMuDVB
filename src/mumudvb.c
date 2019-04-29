@@ -179,6 +179,9 @@ int processt2(unsigned char* input_buf, unsigned int input_buf_offset, unsigned 
 int
 main (int argc, char **argv)
 {
+	printf("%d\n", getpid());
+	fflush(stdout);
+
 	// file descriptors
 	fds_t fds; /** File descriptors associated with the card */
 	memset(&fds,0,sizeof(fds_t));
@@ -312,12 +315,14 @@ main (int argc, char **argv)
 
 	// DO NOT REMOVE (make MuMuDVB a deamon)
 	if(!no_daemon)
+	{
 		if(daemon(42,0))
 		{
 			log_message( log_module,  MSG_WARN, "Cannot daemonize: %s\n",
 					strerror (errno));
 			exit(666); //Right code for a bad daemon no ?
 		}
+	}
 
 	//If the user didn't defined a preferred logging way, and we daemonize, we set to syslog
 	if (!no_daemon)
