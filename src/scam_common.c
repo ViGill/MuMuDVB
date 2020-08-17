@@ -93,7 +93,7 @@ int read_scam_configuration(scam_parameters_t *scam_vars, mumudvb_channel_t *c_c
     if(scam_vars->scam_support)
     {
       log_message( log_module,  MSG_WARN,
-                   "You have enabled the support for software descrambling (scrambled channels). Please report any bug/comment\n");
+                   "You have enabled the support for software descrambling (scrambled channels). Index=%d. Please report any bug/comment\n", scam_vars->scam_support);
     }
   scam_vars->ring_buffer_default_size=RING_BUFFER_DEFAULT_SIZE;
   scam_vars->decsa_default_delay=DECSA_DEFAULT_DELAY;
@@ -235,7 +235,7 @@ int scam_init_no_autoconf(scam_parameters_t *scam_vars, mumudvb_channel_t *chann
   if (scam_vars->scam_support){
     for (curr_channel = 0; curr_channel < number_of_channels; curr_channel++)
     {
-      if (channels[curr_channel].scam_support==1 && channels[curr_channel].pid_i.num_pids>1) {
+      if (channels[curr_channel].scam_support && channels[curr_channel].pid_i.num_pids>1) {
     	  if(!channels[curr_channel].pid_i.pmt_pid)
     	  {
     		  log_message( log_module,  MSG_WARN,
