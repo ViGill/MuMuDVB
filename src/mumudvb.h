@@ -350,6 +350,9 @@ typedef struct mumu_chan_t{
 	/**Transport stream ID*/
 	MU_F_V(int,service_id);
 
+	/** forced_forced_service_id **/
+	int forced_service_id;
+
 	/**Say if we need to ask this channel to the cam*/
 	MU_F_V(int,need_cam_ask);
 	/** When did we asked the channel to the CAM */
@@ -500,7 +503,6 @@ typedef struct mumu_chan_t{
 	uint8_t eit_table_id_to_send;
 	/** the continuity counter for the EIT */
 	int eit_cc;
-
 
 	/** The occupied traffic (in kB/s) */
 	float traffic;

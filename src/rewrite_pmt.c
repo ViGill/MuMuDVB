@@ -57,13 +57,14 @@ static char *log_module = "PMT rewrite: ";
 int pmt_need_update(unsigned char *ts_packet, mumudvb_channel_t *channel) {
 	pmt_t *pmt = (pmt_t *) (ts_packet + TS_HEADER_LEN);
 
+
 	if (pmt->table_id == 0x02) {
 		if (channel->original_pmt_ready) {
 			if (pmt->version_number != channel->generated_pmt_version) {
 				log_message(log_module, MSG_DEBUG, "PMT changed, old version: %d, new version: %d, rewriting...", channel->generated_pmt_version, pmt->version_number);
 				channel->original_pmt_ready = 0;
 			} else {
-				return 0;
+				return 1;
 			}
 		}
 		if (!channel->original_pmt_ready) {
@@ -111,101 +112,40 @@ int pmt_channel_rewrite(mumudvb_channel_t *channel) {
 	pmt_t *pmt = (pmt_t *) (ts_packet + TS_HEADER_LEN);
 
 	if (pmt->table_id != 0x02) {
-		log_message(log_module, MSG_DETAIL, "We didn't get the good PMT (wrong table ID 0x%02X), search for a new one", pmt->table_id);
+		log_message(log_module, MSG_DETAIL, "We didn't get the good PMT (wrong table ID 0x%02X), ts_packet[0]=0x%x search for a new one", pmt->table_id, ts_packet[0]);
 		return 0;
 	}
 
-	pmt_info_t *pmt_info;
-	unsigned long crc32;
-	//destination buffer
-	unsigned char buf_dest[TS_PACKET_SIZE];
-	int buf_dest_pos = 0;
+	if (channel->forced_service_id)
+	{
+		pmt->program_number_hi = (channel->forced_service_id>>8)&0xFF;
+		pmt->program_number_lo = channel->forced_service_id&0xFF;
+        }
+	memcpy(channel->generated_pmt, channel->original_pmt, TS_PACKET_SIZE);
 
-	int section_length = 0, elem_pid = 0;
-	int new_section_length = 0;
-	int es_info_len = 0;
-	int new_es_info_len = 0;
-
-	int i = 0, j = 0;
-
-	log_message(log_module, MSG_DEBUG, "PMT pid = %d; channel name = \"%s\"\n", channel->pmt_packet->pid, channel->name);
-
-	section_length = HILO(pmt->section_length) + 3;
-
-	//lets start the copy
-	//we copy the ts header and adapt it a bit
-	//the continuity counter is updated elsewhere
-	if (ts_header->payload_unit_start_indicator) {
-		if (ts_packet[TS_HEADER_LEN - 1])
-			log_message(log_module, MSG_DEBUG, "pointer field 0x%x \n", ts_packet[TS_HEADER_LEN - 1]);
-	}
-	ts_header->payload_unit_start_indicator = 1;
-	ts_packet[TS_HEADER_LEN - 1] = 0; //we erase the pointer field
-	//we copy the modified SDT header
-	pmt->current_next_indicator = 1; //applicable immediately
-	pmt->section_number = 0;
-	pmt->last_section_number = 0;
-
-	memcpy(buf_dest, ts_header, TS_HEADER_LEN + PMT_LEN);
-	buf_dest_pos = TS_HEADER_LEN + PMT_LEN;
-
-	/**
-	 * Parse PMT
-	 */
-	int es_len = section_length - PMT_LEN - 4;
-	log_message(log_module, MSG_DEBUG, "Number of PIDs requested from PMT: %d\n", channel->pid_i.num_pids-1); // one of them is PMT PID itself
-	for (i = 0; i < es_len; i += PMT_INFO_LEN + es_info_len) {
-		pmt_info = (pmt_info_t *) ((char *) pmt + PMT_LEN + i);
-		elem_pid = HILO(pmt_info->elementary_PID);
-		es_info_len = HILO(pmt_info->ES_info_length);
-		//Prevent write overflow
-		if(buf_dest_pos + PMT_INFO_LEN + es_info_len >= TS_PACKET_SIZE - 4) {
-			log_message(log_module, MSG_DEBUG, "  Write overflow detected, aborting copy");
-			break;
-		}
-		for (j = 0; j < channel->pid_i.num_pids; j++) {
-			if (elem_pid == channel->pid_i.pids[j]) {
-				new_es_info_len += PMT_INFO_LEN + es_info_len;
-				log_message(log_module, MSG_DEBUG, " PID %d found, copy to new PMT\n", channel->pid_i.pids[j]);
-				memcpy(buf_dest + buf_dest_pos, pmt_info, PMT_INFO_LEN + es_info_len);
-				buf_dest_pos += PMT_INFO_LEN + es_info_len;
-			}
-		}
-	}
-
-	new_section_length = buf_dest_pos - TS_HEADER_LEN + 1;
-
-	//We write the new section length
-	buf_dest[1 + TS_HEADER_LEN] = (((new_section_length) & 0x0f00) >> 8) | (0xf0 & buf_dest[1 + TS_HEADER_LEN]);
-	buf_dest[2 + TS_HEADER_LEN] = new_section_length & 0xff;
-
+	int section_length = 0;
+	section_length = HILO(pmt->section_length);
 	//CRC32 calculation inspired by the xine project
 	//Now we must adjust the CRC32
 	//we compute the CRC32
+	unsigned long crc32, i;
 	crc32 = 0xffffffff;
-	for (i = 0; i < new_section_length - 1; i++) {
-		crc32 = (crc32 << 8) ^ crc32_table[((crc32 >> 24) ^ buf_dest[i + TS_HEADER_LEN]) & 0xff];
+	for (i = 0; i < section_length - 1; i++) {
+		crc32 = (crc32 << 8) ^ crc32_table[((crc32 >> 24) ^ channel->generated_pmt[i + TS_HEADER_LEN]) & 0xff];
 	}
+	int buf_dest_pos = section_length+4;
 
 	//We write the CRC32 to the buffer
-	buf_dest[buf_dest_pos] = (crc32 >> 24) & 0xff;
+	channel->generated_pmt[buf_dest_pos] = (crc32 >> 24) & 0xff;
 	buf_dest_pos += 1;
-	buf_dest[buf_dest_pos] = (crc32 >> 16) & 0xff;
+	channel->generated_pmt[buf_dest_pos] = (crc32 >> 16) & 0xff;
 	buf_dest_pos += 1;
-	buf_dest[buf_dest_pos] = (crc32 >> 8) & 0xff;
+	channel->generated_pmt[buf_dest_pos] = (crc32 >> 8) & 0xff;
 	buf_dest_pos += 1;
-	buf_dest[buf_dest_pos] = crc32 & 0xff;
+	channel->generated_pmt[buf_dest_pos] = crc32 & 0xff;
 	buf_dest_pos += 1;
 
-	//Padding with 0xFF
-	memset(buf_dest + buf_dest_pos, 0xFF, TS_PACKET_SIZE - buf_dest_pos);
 
-	//update generated PMT version (matches the original PMT version)
-	log_message(log_module, MSG_DEBUG, "PMT rewritten\n");
-	channel->generated_pmt_version = pmt->version_number;
-	memcpy(channel->generated_pmt, buf_dest, TS_PACKET_SIZE);
-
-	//Everything is OK
 	return 1;
 }
 
@@ -214,6 +154,7 @@ int pmt_send_packet(unsigned char *pmt_ts_packet, mumudvb_channel_t *channel) {
 	channel->pmt_continuity_counter++;
 	channel->pmt_continuity_counter = channel->pmt_continuity_counter % 32;
 	memcpy(pmt_ts_packet, channel->generated_pmt, TS_PACKET_SIZE);
+        pmt_t *pmt = (pmt_t *) (pmt_ts_packet + TS_HEADER_LEN);
 	set_continuity_counter(pmt_ts_packet, channel->pmt_continuity_counter);
 	return 1;
 }
@@ -234,7 +175,7 @@ int pmt_rewrite_new_channel_packet(unsigned char *ts_packet, unsigned char *pmt_
 					return 0;
 				}
 			} else {
-				return 1;
+				return pmt_send_packet(pmt_ts_packet, channel);
 			}
 		} else if (need_update == 2) {
 			//Multi-part PMT, we have to assemble it before processing

@@ -123,6 +123,7 @@ int pat_channel_rewrite(rewrite_parameters_t *rewrite_vars, mumudvb_channel_t *c
 	}
 	section_length=HILO(pat->section_length);
 
+
 	//lets start the copy
 	//we copy the ts header and adapt it a bit
 	//the continuity counter is updated elswhere
@@ -150,6 +151,11 @@ int pat_channel_rewrite(rewrite_parameters_t *rewrite_vars, mumudvb_channel_t *c
 			if((buf_dest_pos+PAT_PROG_LEN+4<TS_PACKET_SIZE) &&
 					(!channel->service_id || (channel->service_id == HILO(prog->program_number)) ))
 			{
+				if (channel->forced_service_id)
+				{
+					prog->program_number_hi = (channel->forced_service_id>>8)&0xFF;
+					prog->program_number_lo = channel->forced_service_id&0xFF;
+				}
 				for(i=0;i<channel->pid_i.num_pids;i++)
 					if(channel->pid_i.pids[i]==HILO(prog->network_pid))
 					{

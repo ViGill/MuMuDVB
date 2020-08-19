@@ -556,6 +556,17 @@ main (int argc, char **argv)
 			substring = strtok (NULL, delimiteurs);
 			c_chan->service_id = atoi (substring);
 		}
+		else if (!strcmp (substring, "forced_service_id"))
+		{
+			if ( c_chan == NULL)
+			{
+				log_message( log_module,  MSG_ERROR,
+						"service_id : You have to start a channel first (using new_channel)\n");
+				exit(ERROR_CONF);
+			}
+			substring = strtok (NULL, delimiteurs);
+			c_chan->forced_service_id = atoi (substring);
+		}
 		else if (!strcmp (substring, "pids"))
 		{
 			ipid = 0;
@@ -1610,9 +1621,9 @@ main (int argc, char **argv)
 				/******************************************************/
 				if((send_packet==1) && //no need to check packets we don't send
 						(pid == chan_p.channels[ichan].pid_i.pmt_pid) && //This is a PMT PID
-						(chan_p.channels[ichan].pid_i.pmt_pid) && //we have the pmt_pid
+						(chan_p.channels[ichan].pid_i.pmt_pid))/* && //we have the pmt_pid
 						(rewrite_vars.rewrite_pmt == OPTION_ON ) && //AND we asked for rewrite
-						(chan_p.channels[ichan].pmt_rewrite == 1))  //AND this channel's PMT shouldn't be skipped
+						(chan_p.channels[ichan].pmt_rewrite == 1))  //AND this channel's PMT shouldn't be skipped */
 				{
 					send_packet=pmt_rewrite_new_channel_packet(actual_ts_packet, pmt_ts_packet, &chan_p.channels[ichan], ichan);
 				}
@@ -1623,7 +1634,9 @@ main (int argc, char **argv)
 				if((send_packet==1) && //no need to check packets we don't send
 						(pid == 0) && //This is a PAT PID
 						rewrite_vars.rewrite_pat == OPTION_ON )  //AND we asked for rewrite
+				{
 					send_packet=pat_rewrite_new_channel_packet(actual_ts_packet, &rewrite_vars, &chan_p.channels[ichan], ichan);
+				}
 
 				/******************************************************/
 				//Rewrite SDT
@@ -1632,7 +1645,9 @@ main (int argc, char **argv)
 						(pid == 17) && //This is a SDT PID
 						rewrite_vars.rewrite_sdt == OPTION_ON &&  //AND we asked for rewrite
 						!chan_p.channels[ichan].sdt_rewrite_skip ) //AND the generation was successful
+				{
 					send_packet=sdt_rewrite_new_channel_packet(actual_ts_packet, &rewrite_vars, &chan_p.channels[ichan], ichan);
+				}
 
 				/******************************************************/
 				//Rewrite EIT
@@ -1665,8 +1680,10 @@ main (int argc, char **argv)
 				if(send_packet==1)
 				{
 					/**Special PMT case*/
-					if((pid == chan_p.channels[ichan].pid_i.pmt_pid) && (rewrite_vars.rewrite_pmt == OPTION_ON ) && (chan_p.channels[ichan].pmt_rewrite == 1))
+					if(pid == chan_p.channels[ichan].pid_i.pmt_pid)// && (rewrite_vars.rewrite_pmt == OPTION_ON )) && (chan_p.channels[ichan].pmt_rewrite == 1))
+					{
 						buffer_func(channel, pmt_ts_packet, &unic_p, scam_vars_ptr);
+					}
 					else
 						buffer_func(channel, actual_ts_packet, &unic_p, scam_vars_ptr);
 				}
