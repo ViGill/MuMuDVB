@@ -134,6 +134,8 @@ int pat_channel_rewrite(rewrite_parameters_t *rewrite_vars, mumudvb_channel_t *c
 	pat->current_next_indicator=1; //applicable immediately
 	pat->section_number=0;         //only one pat
 	pat->last_section_number=0;
+	pat->transport_stream_id_hi = 0xde;
+	pat->transport_stream_id_lo = 0xad;
 	memcpy(buf_dest+TS_HEADER_LEN,pat,PAT_LEN);
 
 	buf_dest_pos=TS_HEADER_LEN+PAT_LEN;
