@@ -350,8 +350,11 @@ typedef struct mumu_chan_t{
 	/**Transport stream ID*/
 	MU_F_V(int,service_id);
 
-	/** forced_forced_service_id **/
+	/** forced_service_id **/
 	int forced_service_id;
+
+	/** forced_pmt_pid **/
+	int forced_pmt_pid;
 
 	/**Say if we need to ask this channel to the cam*/
 	MU_F_V(int,need_cam_ask);

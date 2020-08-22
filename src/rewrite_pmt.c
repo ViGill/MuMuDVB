@@ -120,6 +120,11 @@ int pmt_channel_rewrite(mumudvb_channel_t *channel) {
 	{
 		pmt->program_number_hi = (channel->forced_service_id>>8)&0xFF;
 		pmt->program_number_lo = channel->forced_service_id&0xFF;
+	}
+	if (channel->forced_pmt_pid)
+	{
+		ts_header->pid_hi = (channel->forced_pmt_pid>>8)&0xFF;
+		ts_header->pid_lo = channel->forced_pmt_pid&0xFF;
         }
 	memcpy(channel->generated_pmt, channel->original_pmt, TS_PACKET_SIZE);
 

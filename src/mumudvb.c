@@ -567,6 +567,17 @@ main (int argc, char **argv)
 			substring = strtok (NULL, delimiteurs);
 			c_chan->forced_service_id = atoi (substring);
 		}
+		else if (!strcmp (substring, "forced_pmt_pid"))
+		{
+			if ( c_chan == NULL)
+			{
+				log_message( log_module,  MSG_ERROR,
+						"pmt_pid : You have to start a channel first (using new_channel)\n");
+				exit(ERROR_CONF);
+			}
+			substring = strtok (NULL, delimiteurs);
+			c_chan->forced_pmt_pid= atoi (substring);
+		}
 		else if (!strcmp (substring, "pids"))
 		{
 			ipid = 0;

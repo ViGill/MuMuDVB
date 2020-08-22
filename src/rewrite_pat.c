@@ -168,8 +168,14 @@ int pat_channel_rewrite(rewrite_parameters_t *rewrite_vars, mumudvb_channel_t *c
 						}
 						else
 						{
-							log_message( log_module, MSG_DETAIL,"NEW program for channel %d : \"%s\". PMT pid : %d\n", curr_channel, channel->name,channel->pid_i.pids[i]);
+							log_message( log_module, MSG_ERROR,"NEW program for channel %d : \"%s\". PMT pid : %d\n", curr_channel, channel->name,channel->pid_i.pids[i]);
 							/*we found a announce for a PMT PID in our stream, we keep it*/
+							if (channel->forced_pmt_pid)
+							{
+								log_message( log_module, MSG_ERROR, "\n\n\nFORCE PMT PID\n\n\n");
+								prog->network_pid_hi = (channel->forced_pmt_pid>>8)&0xFF;
+								prog->network_pid_lo = channel->forced_pmt_pid&0xFF;
+							}
 							memcpy(buf_dest+buf_dest_pos,rewrite_vars->full_pat->data_full+delta,PAT_PROG_LEN);
 							buf_dest_pos+=PAT_PROG_LEN;
 						}
