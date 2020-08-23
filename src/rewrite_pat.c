@@ -172,7 +172,6 @@ int pat_channel_rewrite(rewrite_parameters_t *rewrite_vars, mumudvb_channel_t *c
 							/*we found a announce for a PMT PID in our stream, we keep it*/
 							if (channel->forced_pmt_pid)
 							{
-								log_message( log_module, MSG_ERROR, "\n\n\nFORCE PMT PID\n\n\n");
 								prog->network_pid_hi = (channel->forced_pmt_pid>>8)&0xFF;
 								prog->network_pid_lo = channel->forced_pmt_pid&0xFF;
 							}
