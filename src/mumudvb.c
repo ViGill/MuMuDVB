@@ -1696,7 +1696,22 @@ main (int argc, char **argv)
 						buffer_func(channel, pmt_ts_packet, &unic_p, scam_vars_ptr);
 					}
 					else
-						buffer_func(channel, actual_ts_packet, &unic_p, scam_vars_ptr);
+					{
+                                                int idx;
+						int skip = 0;
+                                                for (idx=0; idx<MAX_PIDS; idx++)
+                                                {
+                                                        if (chan_p.channels[ichan].pid_i.pids[idx]
+								&& chan_p.channels[ichan].pid_i.pids[idx] == pid)
+							{
+								if (chan_p.channels[ichan].pid_i.pids_type[idx] == PID_ECM)
+									skip = 1;
+								break;
+							}
+						}
+						if (!skip)
+							buffer_func(channel, actual_ts_packet, &unic_p, scam_vars_ptr);
+					}
 				}
 
 			}
